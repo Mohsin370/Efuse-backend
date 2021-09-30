@@ -1,8 +1,7 @@
-const bcrypt = require("bcrypt");
-var jwt = require("jsonwebtoken");
-// const { Users } = require("../../models");
 const mongoose = require('mongoose');
-
+const redis = require("redis");
+const REDIS_PORT = process.env.PORT || 6379;
+const client = redis.createClient(REDIS_PORT);
 
 const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
@@ -13,24 +12,7 @@ const userSchema = new mongoose.Schema({
 })
 
 
-const encryptPassword = async (Password) => {
-  let promise = new Promise((res, rej) => {
-    let saltRounds = 10;
-    bcrypt.genSalt(saltRounds, function (err, salt) {
-      bcrypt.hash(Password, salt, function (err, hash) {
-        res(hash);
-      });
-    });
-  });
-  return promise.then((res) => {
-    return res;
-  });
-};
-
-
 const addUser = async (req, res) => {
-  // const { email, name, password } = req.body.data;
-  // let encryptedPassword = await encryptPassword(password);
   const Users = mongoose.model('Users', userSchema)
   const user = new Users(req.body)
   await user.save().then(item => {
@@ -39,44 +21,6 @@ const addUser = async (req, res) => {
     console.log(err)
     res.send("Error Occured")
   });
-
-  // try {
-  //   const ExistingUser = await Users.findAll({
-  //     where: { email: email },
-  //   });
-
-  //   if (ExistingUser.length > 0) {
-  //     res.send({
-  //       message: "User already Exist",
-  //     });
-  //     return 0;
-  //   }
-  // } catch (err) {
-  //   console.log(err);
-  // }
-
-  // try {
-  //   let result = await Users.create({
-  //     name,
-  //     email,
-  //     password: encryptedPassword,
-  //   });
-  //   if (result) {
-  //     res.send({
-  //       message: "success",
-  //     });
-  //   } else {
-  //     res.send({
-  //       message: "exists",
-  //     });
-  //   }
-  // } catch (err) {
-  //   console.log(err);
-  //   res.send({
-  //     message:'Error',
-  //     err,
-  //   })
-  // }
 };
 
 const UpdateUser = async (req, res) => {
@@ -92,21 +36,46 @@ const UpdateUser = async (req, res) => {
 
 
 const getUser = async (req, res) => {
-  const Users = mongoose.model('Users', userSchema)
-  await Users.findOne({ _id: req.params.userId }).then(item => {
-    res.send({
-      userDetails:item,
-      success:true
-    })
-  }).catch(err => {
-    console.log(err)
-    res.send("Error Occured")
-  });
-
+  try {
+    const Users = mongoose.model('Users', userSchema)
+    await Users.findOne({ _id: req.params.userId }).then(item => {
+      if (item) {
+        client.setex(req.params.userId, 2, JSON.stringify(item))
+        res.send({
+          success: true,
+          item
+        })
+      }
+    }).catch(err => {
+      console.log(err)
+      res.send("Error Occured")
+    });
+  } catch {
+    res.send({ message: 'Exception occured' })
+  }
 };
+
+
+//cacheInRedis
+const cacheMiddleware = (req, res, next) => {
+  const { userId } = req.params;
+  client.get(userId, (err, item) => {
+    if (err) throw err
+
+    if (item != null) {
+      res.send({
+        success: true,
+        item: JSON.parse(item)
+      })
+    } else {
+      next();
+    }
+  })
+}
 
 module.exports = {
   addUser,
   UpdateUser,
-  getUser
+  getUser,
+  cacheMiddleware
 };
