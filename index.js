@@ -31,17 +31,17 @@ app.get("/", (req, res) => res.send("Server Running"))
 
 //User Routes
 app.post("/api/user", userController.addUser);
-app.get("/api/user/:userId", userController.cacheMiddleware, userController.getUser);
+app.get("/api/user/:userId", /*userController.cacheMiddleware,*/ userController.getUser);
 app.patch("/api/user/:userId", userController.UpdateUser);
 
 //accounts Routes
 app.post("/api/post", postController.addPost);
-app.get("/api/post/:postId",postController.cacheMiddleware, postController.getPostById);
+app.get("/api/post/:postId",/*postController.cacheMiddleware,*/ postController.getPostById);
 app.patch("/api/post/:postId", postController.UpdatePost);
-app.get("/api/post/:userId/posts",userController.cacheMiddleware, postController.getPostsByUserId);
+app.get("/api/post/:userId/posts",/*userController.cacheMiddleware,*/ postController.getPostsByUserId);
 
 app.listen(process.env.PORT || 5000, async () => {
-  mongoose.connect('mongodb://localhost/efuse')
+  mongoose.connect('mongodb://mongo:27017/efuse')
   .then(()=>console.log('Db Connected'))
   .catch(()=>console.log('Db Connection Error'))
 });

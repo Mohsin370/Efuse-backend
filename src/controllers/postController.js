@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
-const redis = require("redis");
-const REDIS_PORT = process.env.PORT || 6379;
-const client = redis.createClient(REDIS_PORT);
+// const redis = require("redis");
+// const REDIS_PORT = process.env.PORT || 6379;
+// const client = redis.createClient(REDIS_PORT);
 
 const postSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -43,7 +43,7 @@ const UpdatePost = async (req, res) => {
 const getPostById = async (req, res) => {
   try {
     await Post.findOne({ _id: req.params.postId }).then(item => {
-      client.setex(req.params.postId, 2, JSON.stringify(item))
+      // client.setex(req.params.postId, 2, JSON.stringify(item))
       res.send({
         postDetails: item,
         success: true

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
-const redis = require("redis");
-const REDIS_PORT = process.env.PORT || 6379;
-const client = redis.createClient(REDIS_PORT);
+// const redis = require("redis");
+// const REDIS_PORT = process.env.PORT || 6379;
+// const client = redis.createClient(REDIS_PORT);
 
 const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
@@ -40,7 +40,7 @@ const getUser = async (req, res) => {
     const Users = mongoose.model('Users', userSchema)
     await Users.findOne({ _id: req.params.userId }).then(item => {
       if (item) {
-        client.setex(req.params.userId, 2, JSON.stringify(item))
+        // client.setex(req.params.userId, 2, JSON.stringify(item))
         res.send({
           success: true,
           item
